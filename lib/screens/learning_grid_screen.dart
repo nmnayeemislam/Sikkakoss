@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../data/audio_assets.dart';
+import '../models/category.dart';
 import '../models/learning_item.dart';
 import '../services/audio_service.dart';
 import '../services/progress_service.dart';
-import '../utils/responsive.dart';
 import '../widgets/app_background.dart';
+import '../widgets/kids_controls.dart';
 import '../widgets/learning_card.dart';
-import '../widgets/section_title.dart';
 import 'learning_detail_screen.dart';
 
 class LearningGridScreen extends StatefulWidget {
@@ -18,12 +18,14 @@ class LearningGridScreen extends StatefulWidget {
     required this.title,
     required this.subtitle,
     required this.items,
+    required this.categoryType,
     this.isArabic = false,
   });
 
   final String title;
   final String subtitle;
   final List<LearningItem> items;
+  final LearningCategoryType categoryType;
   final bool isArabic;
 
   @override
@@ -32,11 +34,23 @@ class LearningGridScreen extends StatefulWidget {
 
 class _LearningGridScreenState extends State<LearningGridScreen> {
   late Set<String> _completedLessons;
+  int _focusedIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _completedLessons = ProgressService.getCompletedLessons();
+    _focusedIndex = _initialFocusedIndex();
+  }
+
+  int _initialFocusedIndex() {
+    if (widget.categoryType == LearningCategoryType.numbers) {
+      final index = widget.items.indexWhere((item) => item.title == '15');
+      if (index != -1) {
+        return index;
+      }
+    }
+    return 0;
   }
 
   Future<void> _openItem(LearningItem item) async {
@@ -46,13 +60,174 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
     }
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) =>
-            LearningDetailScreen(item: item, isArabic: widget.isArabic),
+        builder: (_) => LearningDetailScreen(
+          item: item,
+          sectionTitle: widget.title,
+          sectionColor: _appBarColor(),
+          isArabic: widget.isArabic,
+        ),
       ),
     );
     setState(() {
       _completedLessons = ProgressService.getCompletedLessons();
     });
+  }
+
+  Color _appBarColor() {
+    switch (widget.categoryType) {
+      case LearningCategoryType.banglaVowels:
+      case LearningCategoryType.banglaConsonants:
+        return const Color(0xFF40B65A);
+      case LearningCategoryType.english:
+        return const Color(0xFFE87FB7);
+      case LearningCategoryType.numbers:
+        return const Color(0xFF4D8CF5);
+      case LearningCategoryType.arabic:
+        return const Color(0xFF8B70E8);
+      case LearningCategoryType.surah:
+      case LearningCategoryType.quiz:
+        return const Color(0xFF0F9CA9);
+    }
+  }
+
+  int _gridColumns(double width) {
+    switch (widget.categoryType) {
+      case LearningCategoryType.banglaVowels:
+        return width >= 700 ? 4 : 3;
+      case LearningCategoryType.banglaConsonants:
+        return width >= 700 ? 4 : 3;
+      case LearningCategoryType.arabic:
+        return width >= 700 ? 5 : 4;
+      case LearningCategoryType.numbers:
+        return width >= 700 ? 5 : 4;
+      case LearningCategoryType.english:
+      case LearningCategoryType.surah:
+      case LearningCategoryType.quiz:
+        return 2;
+    }
+  }
+
+  Widget _buildShowcase(BuildContext context, String label, LearningItem item) {
+    final audioAsset = AudioAssets.forLearningItem(item);
+    return ValueListenableBuilder<String?>(
+      valueListenable: AudioService.instance.currentAsset,
+      builder: (context, currentAudioAsset, _) {
+        final isPlaying =
+            currentAudioAsset == audioAsset &&
+            AudioService.instance.isPlayingAsset(audioAsset);
+        return AnimatedScale(
+          duration: const Duration(milliseconds: 180),
+          scale: isPlaying ? 1.01 : 1.0,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+              border: Border.all(
+                color: isPlaying
+                    ? _appBarColor()
+                    : Colors.black.withValues(alpha: 0.05),
+                width: isPlaying ? 2 : 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: _appBarColor(),
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                _LearningShowcaseArt(
+                  item: item,
+                  color: _appBarColor(),
+                  isArabic: widget.isArabic,
+                ),
+                const SizedBox(height: 10),
+                KidsActionPill(
+                  label: isPlaying ? 'Playing' : 'Listen',
+                  icon: isPlaying
+                      ? Icons.graphic_eq_rounded
+                      : Icons.volume_up_rounded,
+                  onPressed: audioAsset == null
+                      ? () => _openItem(item)
+                      : () => AudioService.instance.playAudio(audioAsset),
+                  backgroundColor: _appBarColor(),
+                  foregroundColor: Colors.white,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAlphabetChips(BuildContext context) {
+    final previewItems = widget.items.take(5).toList(growable: false);
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      alignment: WrapAlignment.center,
+      children: [
+        for (final item in previewItems)
+          InkWell(
+            onTap: () {
+              setState(() {
+                _focusedIndex = widget.items.indexOf(item);
+              });
+              _openItem(item);
+            },
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(999),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Text(
+                item.title,
+                style: TextStyle(
+                  color: _appBarColor(),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTopLesson(BuildContext context) {
+    final item = widget.items[_focusedIndex];
+    if (widget.categoryType == LearningCategoryType.english) {
+      return _buildShowcase(context, widget.title, item);
+    }
+    if (widget.categoryType == LearningCategoryType.numbers) {
+      return _buildShowcase(context, widget.title, item);
+    }
+    return const SizedBox.shrink();
   }
 
   @override
@@ -62,6 +237,7 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
+              final columns = _gridColumns(constraints.maxWidth);
               return ValueListenableBuilder<String?>(
                 valueListenable: AudioService.instance.currentAsset,
                 builder: (context, currentAudioAsset, _) {
@@ -69,58 +245,165 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
                     slivers: [
                       SliverAppBar(
                         pinned: true,
-                        backgroundColor: Colors.transparent,
+                        backgroundColor: _appBarColor(),
+                        surfaceTintColor: Colors.transparent,
                         elevation: 0,
                         title: Text(widget.title),
-                      ),
-                      SliverPadding(
-                        padding: Responsive.pagePadding(constraints.maxWidth),
-                        sliver: SliverList.list(
-                          children: [
-                            SectionTitle(
-                              title: widget.title,
-                              subtitle: widget.subtitle,
+                        centerTitle: true,
+                        foregroundColor: Colors.white,
+                        leading: IconButton(
+                          tooltip: 'Back',
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.arrow_back_rounded),
+                        ),
+                        actions: [
+                          if (widget.categoryType ==
+                                  LearningCategoryType.banglaVowels ||
+                              widget.categoryType ==
+                                  LearningCategoryType.arabic)
+                            IconButton(
+                              tooltip: 'Sound',
+                              onPressed: () {
+                                final item = widget.items[_focusedIndex];
+                                final audioAsset = AudioAssets.forLearningItem(
+                                  item,
+                                );
+                                if (audioAsset != null) {
+                                  unawaited(
+                                    AudioService.instance.playAudio(audioAsset),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.volume_up_rounded),
                             ),
-                            const SizedBox(height: 16),
-                          ],
+                          const SizedBox(width: 6),
+                        ],
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            bottom: Radius.circular(24),
+                          ),
                         ),
                       ),
-                      SliverPadding(
-                        padding: EdgeInsets.fromLTRB(
-                          Responsive.pagePadding(constraints.maxWidth).left,
-                          0,
-                          Responsive.pagePadding(constraints.maxWidth).right,
-                          24,
+                      if (widget.categoryType == LearningCategoryType.english ||
+                          widget.categoryType == LearningCategoryType.numbers)
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+                          sliver: SliverToBoxAdapter(
+                            child: _buildTopLesson(context),
+                          ),
                         ),
-                        sliver: SliverGrid.builder(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: Responsive.gridColumns(
-                                  constraints.maxWidth,
-                                ),
-                                mainAxisSpacing: 14,
-                                crossAxisSpacing: 14,
-                                childAspectRatio: 1,
+                      if (widget.categoryType == LearningCategoryType.english)
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+                          sliver: SliverToBoxAdapter(
+                            child: _buildAlphabetChips(context),
+                          ),
+                        ),
+                      if (widget.categoryType == LearningCategoryType.numbers)
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+                          sliver: SliverToBoxAdapter(
+                            child: _NumberRangeGrid(
+                              items: widget.items.sublist(
+                                10,
+                                widget.items.length >= 25
+                                    ? 25
+                                    : widget.items.length,
                               ),
-                          itemCount: widget.items.length,
-                          itemBuilder: (context, index) {
-                            final item = widget.items[index];
-                            final audioAsset = AudioAssets.forLearningItem(
-                              item,
-                            );
-                            return LearningCard(
-                              item: item,
-                              isCompleted: _completedLessons.contains(item.id),
-                              isPlaying:
-                                  currentAudioAsset == audioAsset &&
-                                  AudioService.instance.isPlayingAsset(
-                                    audioAsset,
-                                  ),
-                              onTap: () => _openItem(item),
-                            );
-                          },
+                              onTapItem: (item) {
+                                setState(() {
+                                  _focusedIndex = widget.items.indexOf(item);
+                                });
+                                _openItem(item);
+                              },
+                            ),
+                          ),
                         ),
-                      ),
+                      if (widget.categoryType ==
+                              LearningCategoryType.banglaVowels ||
+                          widget.categoryType ==
+                              LearningCategoryType.banglaConsonants ||
+                          widget.categoryType == LearningCategoryType.arabic)
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
+                          sliver: SliverGrid.builder(
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: columns,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                  childAspectRatio: 0.88,
+                                ),
+                            itemCount: widget.items.length,
+                            itemBuilder: (context, index) {
+                              final item = widget.items[index];
+                              final audioAsset = AudioAssets.forLearningItem(
+                                item,
+                              );
+                              return LearningCard(
+                                item: item,
+                                isCompleted: _completedLessons.contains(
+                                  item.id,
+                                ),
+                                isPlaying:
+                                    currentAudioAsset == audioAsset &&
+                                    AudioService.instance.isPlayingAsset(
+                                      audioAsset,
+                                    ),
+                                onTap: () => _openItem(item),
+                              );
+                            },
+                          ),
+                        ),
+                      if (widget.categoryType ==
+                              LearningCategoryType.banglaVowels ||
+                          widget.categoryType ==
+                              LearningCategoryType.banglaConsonants ||
+                          widget.categoryType == LearningCategoryType.arabic ||
+                          widget.categoryType == LearningCategoryType.numbers)
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
+                          sliver: SliverToBoxAdapter(
+                            child: KidsRoundNavRow(
+                              onLeft: () => Navigator.of(context).maybePop(),
+                              onHome: () => Navigator.of(
+                                context,
+                              ).popUntil((route) => route.isFirst),
+                              onRight: widget.items.isEmpty
+                                  ? null
+                                  : () {
+                                      final next =
+                                          (_focusedIndex + 1) %
+                                          widget.items.length;
+                                      setState(() {
+                                        _focusedIndex = next;
+                                      });
+                                      _openItem(widget.items[next]);
+                                    },
+                            ),
+                          ),
+                        ),
+                      if (widget.categoryType == LearningCategoryType.english)
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
+                          sliver: SliverToBoxAdapter(
+                            child: KidsRoundNavRow(
+                              showHome: false,
+                              onLeft: () => Navigator.of(context).maybePop(),
+                              onRight: widget.items.isEmpty
+                                  ? null
+                                  : () {
+                                      final next =
+                                          (_focusedIndex + 1) %
+                                          widget.items.length;
+                                      setState(() {
+                                        _focusedIndex = next;
+                                      });
+                                      _openItem(widget.items[next]);
+                                    },
+                            ),
+                          ),
+                        ),
                     ],
                   );
                 },
@@ -129,6 +412,103 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _LearningShowcaseArt extends StatelessWidget {
+  const _LearningShowcaseArt({
+    required this.item,
+    required this.color,
+    required this.isArabic,
+  });
+
+  final LearningItem item;
+  final Color color;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = item.title;
+    final isNumber = RegExp(r'^\d+$').hasMatch(title);
+    final isSingleLetter = title.length == 1 && !isNumber;
+
+    return Column(
+      children: [
+        Text(
+          title,
+          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w900,
+            fontSize: isNumber
+                ? 86
+                : isSingleLetter
+                ? 84
+                : 72,
+            height: 1,
+          ),
+        ),
+        const SizedBox(height: 10),
+        if (item.imageEmoji != null)
+          Text(item.imageEmoji!, style: const TextStyle(fontSize: 92))
+        else
+          const SizedBox(height: 80),
+        const SizedBox(height: 10),
+        Text(
+          item.subtitle,
+          style: const TextStyle(
+            color: Color(0xFF24304F),
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NumberRangeGrid extends StatelessWidget {
+  const _NumberRangeGrid({required this.items, required this.onTapItem});
+
+  final List<LearningItem> items;
+  final ValueChanged<LearningItem> onTapItem;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        for (final item in items)
+          GestureDetector(
+            onTap: () => onTapItem(item),
+            child: Container(
+              width: 54,
+              height: 54,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Text(
+                item.title,
+                style: const TextStyle(
+                  color: Color(0xFF24304F),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

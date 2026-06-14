@@ -66,7 +66,7 @@ class _KidsLearningAppState extends State<KidsLearningApp>
   ThemeData _buildTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.coral,
+      seedColor: const Color(0xFF0F9CA9),
       brightness: brightness,
     );
 
@@ -76,27 +76,32 @@ class _KidsLearningAppState extends State<KidsLearningApp>
       colorScheme: colorScheme,
       scaffoldBackgroundColor: isDark
           ? const Color(0xFF101828)
-          : AppColors.cream,
+          : const Color(0xFFFFF8EB),
       fontFamily: 'Roboto',
       appBarTheme: AppBarTheme(
         centerTitle: false,
         foregroundColor: isDark ? Colors.white : AppColors.ink,
         titleTextStyle: TextStyle(
           color: isDark ? Colors.white : AppColors.ink,
-          fontSize: 22,
+          fontSize: 20,
           fontWeight: FontWeight.w900,
         ),
       ),
-      cardTheme: const CardThemeData(margin: EdgeInsets.zero),
+      cardTheme: CardThemeData(
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
         ),
       ),
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         labelStyle: const TextStyle(fontWeight: FontWeight.w700),
       ),
     );

@@ -48,30 +48,35 @@ class _HomeScreenState extends State<HomeScreen> {
           title: category.title,
           subtitle: category.subtitle,
           items: AppData.banglaVowels,
+          categoryType: category.type,
         );
       case LearningCategoryType.banglaConsonants:
         screen = LearningGridScreen(
           title: category.title,
           subtitle: category.subtitle,
           items: AppData.banglaConsonants,
+          categoryType: category.type,
         );
       case LearningCategoryType.english:
         screen = LearningGridScreen(
           title: category.title,
           subtitle: category.subtitle,
           items: AppData.englishAlphabet,
+          categoryType: category.type,
         );
       case LearningCategoryType.numbers:
         screen = LearningGridScreen(
           title: category.title,
           subtitle: category.subtitle,
           items: AppData.numbers,
+          categoryType: category.type,
         );
       case LearningCategoryType.arabic:
         screen = LearningGridScreen(
           title: category.title,
           subtitle: category.subtitle,
           items: AppData.arabicLetters,
+          categoryType: category.type,
           isArabic: true,
         );
       case LearningCategoryType.surah:

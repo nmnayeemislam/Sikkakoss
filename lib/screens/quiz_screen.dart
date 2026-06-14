@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../data/app_data.dart';
 import '../models/quiz_question.dart';
 import '../widgets/app_background.dart';
+import '../widgets/kids_controls.dart';
 import 'result_screen.dart';
 
 class QuizScreen extends StatefulWidget {
@@ -62,107 +63,165 @@ class _QuizScreenState extends State<QuizScreen> {
     return Scaffold(
       body: AppBackground(
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                backgroundColor: const Color(0xFF9B7BEE),
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                centerTitle: true,
+                foregroundColor: Colors.white,
+                title: const Text('Quiz'),
+                leading: IconButton(
+                  tooltip: 'Back',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back_rounded),
+                ),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(24),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                sliver: SliverList.list(
                   children: [
-                    IconButton(
-                      tooltip: 'Back',
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.arrow_back_rounded),
-                    ),
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 10,
-                        borderRadius: BorderRadius.circular(8),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.72),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Question ${_currentIndex + 1} of ${_questions.length}',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 10),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(999),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              minHeight: 10,
+                              backgroundColor: Colors.white,
+                              color: const Color(0xFF32B8A6),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Question ${_currentIndex + 1} of ${_questions.length}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Card(
-                  elevation: 0,
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(22),
-                    child: Text(
-                      question.question,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w900),
+                    const SizedBox(height: 18),
+                    Container(
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 16,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        question.question,
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF24304F),
+                            ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: question.options.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
+                    const SizedBox(height: 16),
+                    ...List.generate(question.options.length, (index) {
                       final option = question.options[index];
                       final isSelected = option == _selectedAnswer;
                       final isCorrect = option == question.correctAnswer;
                       final reveal = _selectedAnswer != null;
-                      final color = reveal && isCorrect
-                          ? Colors.green
-                          : reveal && isSelected
-                          ? Colors.red
-                          : Theme.of(context).colorScheme.surface;
-                      return Card(
-                        elevation: 0,
-                        color: color,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: ListTile(
+                      final selectedColor = isCorrect
+                          ? const Color(0xFF56C250)
+                          : const Color(0xFFFF6B6B);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: InkWell(
                           onTap: () => _chooseAnswer(option),
-                          title: Text(
-                            option,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
+                          borderRadius: BorderRadius.circular(18),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
+                            decoration: BoxDecoration(
                               color: reveal && (isCorrect || isSelected)
-                                  ? Colors.white
-                                  : null,
+                                  ? selectedColor.withValues(alpha: 0.16)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: reveal && (isCorrect || isSelected)
+                                    ? selectedColor
+                                    : Colors.black.withValues(alpha: 0.06),
+                                width: reveal && (isCorrect || isSelected)
+                                    ? 2
+                                    : 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    option,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          color: const Color(0xFF24304F),
+                                        ),
+                                  ),
+                                ),
+                                if (reveal && (isCorrect || isSelected))
+                                  Icon(
+                                    isCorrect
+                                        ? Icons.check_circle_rounded
+                                        : Icons.cancel_rounded,
+                                    color: selectedColor,
+                                  ),
+                              ],
                             ),
                           ),
-                          trailing: reveal && (isCorrect || isSelected)
-                              ? Icon(
-                                  isCorrect
-                                      ? Icons.check_circle_rounded
-                                      : Icons.cancel_rounded,
-                                  color: Colors.white,
-                                )
-                              : null,
                         ),
                       );
-                    },
-                  ),
+                    }),
+                    const SizedBox(height: 8),
+                    KidsActionPill(
+                      label: _currentIndex == _questions.length - 1
+                          ? 'See Result'
+                          : 'Next',
+                      icon: Icons.arrow_forward_rounded,
+                      onPressed: _selectedAnswer == null
+                          ? () {}
+                          : _nextQuestion,
+                      backgroundColor: const Color(0xFF9B7BEE),
+                      foregroundColor: Colors.white,
+                    ),
+                  ],
                 ),
-                FilledButton.icon(
-                  onPressed: _selectedAnswer == null ? null : _nextQuestion,
-                  icon: const Icon(Icons.arrow_forward_rounded),
-                  label: Text(
-                    _currentIndex == _questions.length - 1
-                        ? 'See Result'
-                        : 'Next',
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

@@ -18,90 +18,96 @@ class LearningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = isPlaying
-        ? Colors.white
-        : Colors.white.withValues(alpha: 0.18);
-    return Card(
+    return Material(
+      color: Colors.white,
       elevation: 0,
-      color: item.color,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: borderColor, width: isPlaying ? 2.4 : 1),
-      ),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Stack(
-            children: [
-              Positioned(
-                right: 0,
-                top: 0,
-                child: AnimatedScale(
-                  duration: const Duration(milliseconds: 180),
-                  scale: isPlaying ? 1.08 : 1,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(
-                        alpha: isPlaying ? 0.28 : 0.18,
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      isCompleted
-                          ? Icons.check_circle_rounded
-                          : Icons.volume_up_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-              Center(
-                child: AnimatedScale(
-                  duration: const Duration(milliseconds: 220),
-                  scale: isPlaying ? 1.03 : 1.0,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        item.imageEmoji ?? item.title,
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontSize: item.imageEmoji == null ? 54 : 44,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        item.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                            ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+        borderRadius: BorderRadius.circular(18),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isPlaying
+                  ? item.color
+                  : Colors.black.withValues(alpha: 0.05),
+              width: isPlaying ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: item.color.withValues(alpha: isPlaying ? 0.18 : 0.10),
+                blurRadius: 14,
+                offset: const Offset(0, 8),
               ),
             ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.topRight,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: isCompleted
+                          ? const Color(0xFF43B556)
+                          : item.color.withValues(alpha: 0.16),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isCompleted
+                          ? Icons.check_rounded
+                          : Icons.volume_up_rounded,
+                      color: isCompleted ? Colors.white : item.color,
+                      size: 13,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          item.title,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(
+                                color: item.color,
+                                fontWeight: FontWeight.w900,
+                                height: 1,
+                              ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          item.pronunciation,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: const Color(0xFF24304F),
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        if (item.imageEmoji != null) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            item.imageEmoji!,
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

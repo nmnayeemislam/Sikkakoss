@@ -1,99 +1,149 @@
+import 'dart:async';
+
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
-class AudioService {
-  const AudioService._();
+import '../data/audio_assets.dart';
 
-  static final AudioPlayer _player = AudioPlayer();
+class AudioService extends WidgetsBindingObserver {
+  AudioService._();
 
-  static Future<void> playPronunciation(
-    BuildContext context,
-    String pronunciation,
-    String? audioAsset,
-  ) async {
-    if (audioAsset != null) {
-      try {
-        await rootBundle.load('assets/$audioAsset');
-        await _player.stop();
-        await _player.play(AssetSource(audioAsset));
-      } on FlutterError {
-        await SystemSound.play(SystemSoundType.alert);
-        if (!context.mounted) {
-          return;
-        }
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text('Audio file not found for $pronunciation.'),
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        return;
-      }
-    } else {
-      await SystemSound.play(SystemSoundType.click);
-    }
+  static final AudioService instance = AudioService._();
 
-    if (!context.mounted) {
+  final AudioPlayer _player = AudioPlayer();
+  final ValueNotifier<String?> currentAsset = ValueNotifier<String?>(null);
+  final ValueNotifier<PlayerState> playerState = ValueNotifier<PlayerState>(
+    PlayerState.stopped,
+  );
+  final ValueNotifier<Duration> position = ValueNotifier<Duration>(
+    Duration.zero,
+  );
+  final ValueNotifier<Duration?> duration = ValueNotifier<Duration?>(null);
+
+  StreamSubscription<PlayerState>? _stateSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<Duration>? _durationSubscription;
+  bool _initialized = false;
+
+  Future<void> init() async {
+    if (_initialized) {
       return;
     }
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            audioAsset == null
-                ? 'Pronunciation: $pronunciation'
-                : 'Playing $pronunciation',
-          ),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+    _initialized = true;
+    await _player.setReleaseMode(ReleaseMode.stop);
+
+    _stateSubscription = _player.onPlayerStateChanged.listen((state) {
+      playerState.value = state;
+      if (state == PlayerState.completed) {
+        currentAsset.value = null;
+      }
+    });
+
+    _positionSubscription = _player.onPositionChanged.listen((value) {
+      position.value = value;
+    });
+
+    _durationSubscription = _player.onDurationChanged.listen((value) {
+      duration.value = value;
+    });
   }
 
-  static Future<void> playSurah(
-    BuildContext context,
-    String surahName,
-    String audioAsset,
-  ) async {
-    try {
-      await rootBundle.load('assets/$audioAsset');
-      await _player.stop();
-      await _player.play(AssetSource(audioAsset));
-      if (!context.mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text('Playing $surahName'),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-    } on FlutterError {
+  Future<bool> playAudio(String assetPath) async {
+    final resolvedPath = await _resolvePath(assetPath);
+    if (resolvedPath == null) {
       await SystemSound.play(SystemSoundType.alert);
-      if (!context.mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text('Audio file not found for $surahName.'),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+      return false;
+    }
+
+    await stop();
+    currentAsset.value = assetPath;
+
+    try {
+      await _player.play(AssetSource(resolvedPath));
+      return true;
+    } catch (error) {
+      debugPrint('Failed to play $assetPath: $error');
+      currentAsset.value = null;
+      playerState.value = PlayerState.stopped;
+      await SystemSound.play(SystemSoundType.alert);
+      return false;
     }
   }
 
-  static Future<void> stopSurah() async {
+  Future<void> pause() async {
+    if (playerState.value == PlayerState.playing) {
+      await _player.pause();
+    }
+  }
+
+  Future<void> resume() async {
+    if (playerState.value == PlayerState.paused) {
+      await _player.resume();
+    }
+  }
+
+  Future<void> stop() async {
     await _player.stop();
+    position.value = Duration.zero;
+    currentAsset.value = null;
+    playerState.value = PlayerState.stopped;
+  }
+
+  Future<void> seek(Duration seekTo) async {
+    await _player.seek(seekTo);
+  }
+
+  bool isPlayingAsset(String? assetPath) {
+    if (assetPath == null) {
+      return false;
+    }
+    return currentAsset.value == assetPath &&
+        playerState.value == PlayerState.playing;
+  }
+
+  Future<String?> _resolvePath(String logicalPath) async {
+    final candidates = <String>[
+      logicalPath,
+      ...AudioAssets.legacyCandidates(logicalPath),
+    ];
+
+    for (final candidate in candidates) {
+      try {
+        await rootBundle.load('assets/$candidate');
+        return candidate;
+      } on FlutterError {
+        continue;
+      }
+    }
+
+    return null;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+        unawaited(pause());
+        break;
+      case AppLifecycleState.resumed:
+      case AppLifecycleState.hidden:
+        break;
+      case AppLifecycleState.detached:
+        unawaited(stop());
+        break;
+    }
+  }
+
+  Future<void> dispose() async {
+    await _stateSubscription?.cancel();
+    await _positionSubscription?.cancel();
+    await _durationSubscription?.cancel();
+    await _player.dispose();
+    currentAsset.dispose();
+    playerState.dispose();
+    position.dispose();
+    duration.dispose();
   }
 }

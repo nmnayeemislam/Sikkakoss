@@ -4,16 +4,11 @@ import '../data/app_data.dart';
 import '../models/category.dart';
 import '../models/progress_summary.dart';
 import '../services/progress_service.dart';
-import '../utils/responsive.dart';
 import '../widgets/app_background.dart';
 import '../widgets/category_card.dart';
-import '../widgets/progress_header.dart';
-import '../widgets/section_title.dart';
-import '../widgets/surah_section.dart';
 import 'learning_grid_screen.dart';
 import 'quiz_screen.dart';
 import 'settings_screen.dart';
-import 'surah_detail_screen.dart';
 import 'surah_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -100,106 +95,135 @@ class _HomeScreenState extends State<HomeScreen> {
     _refreshProgress();
   }
 
-  Future<void> _openSurahFromHome(int index) async {
-    await ProgressService.setLastOpenedCategory('Small Surah');
-    if (!mounted) {
-      return;
-    }
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => SurahDetailScreen(surah: AppData.surahs[index]),
-      ),
-    );
-    _refreshProgress();
-  }
-
-  Future<void> _openSurahSection() async {
-    await ProgressService.setLastOpenedCategory('Small Surah');
-    if (!mounted) {
-      return;
-    }
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const SurahListScreen()));
-    _refreshProgress();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final gridCategories = AppData.categories
+        .where((category) => category.type != LearningCategoryType.quiz)
+        .toList(growable: false);
+    final quizCategory = AppData.categories.firstWhere(
+      (category) => category.type == LearningCategoryType.quiz,
+    );
+
     return Scaffold(
       body: AppBackground(
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final columns = Responsive.gridColumns(constraints.maxWidth);
+              final columns = constraints.maxWidth >= 700 ? 3 : 2;
+              final horizontalPadding = constraints.maxWidth >= 700
+                  ? 24.0
+                  : 16.0;
               return CustomScrollView(
                 slivers: [
                   SliverAppBar(
                     pinned: true,
-                    backgroundColor: Colors.transparent,
+                    toolbarHeight: 64,
+                    backgroundColor: const Color(0xFF0F9CA9),
+                    surfaceTintColor: Colors.transparent,
                     elevation: 0,
-                    title: const Text('Kids Learning App'),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        bottom: Radius.circular(22),
+                      ),
+                    ),
+                    leading: IconButton(
+                      tooltip: 'Menu',
+                      onPressed: _openSettings,
+                      icon: const Icon(Icons.menu_rounded),
+                    ),
+                    title: const Text(
+                      'Kids Learning',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    centerTitle: true,
                     actions: [
-                      IconButton(
-                        tooltip: 'Settings',
-                        onPressed: _openSettings,
-                        icon: const Icon(Icons.settings_rounded),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star_rounded,
+                                color: Color(0xFFFFC857),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${_summary.totalStars}',
+                                style: const TextStyle(
+                                  color: Color(0xFF24304F),
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   SliverPadding(
-                    padding: Responsive.pagePadding(constraints.maxWidth),
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      18,
+                      horizontalPadding,
+                      10,
+                    ),
                     sliver: SliverList.list(
                       children: [
-                        ProgressHeader(summary: _summary),
-                        const SizedBox(height: 22),
-                        SurahSection(
-                          surahs: AppData.surahs,
-                          completedLessons: _summary.completedLessons,
-                          onOpenSurah: _openSurahFromHome,
-                          onOpenAll: _openSurahSection,
+                        GridView.builder(
+                          itemCount: gridCategories.length,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: columns,
+                                mainAxisSpacing: 12,
+                                crossAxisSpacing: 12,
+                                childAspectRatio: 0.96,
+                              ),
+                          itemBuilder: (context, index) {
+                            final category = gridCategories[index];
+                            return CategoryCard(
+                              category: category,
+                              onTap: () => _openCategory(category),
+                            );
+                          },
                         ),
-                        const SizedBox(height: 22),
-                        const SectionTitle(
-                          title: 'Choose a colorful lesson',
-                          subtitle:
-                              'Offline lessons for bright little learners',
-                        ),
-                        if (_summary.lastOpenedCategory.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Chip(
-                            avatar: const Icon(Icons.history_rounded),
-                            label: Text(
-                              'Last opened: ${_summary.lastOpenedCategory}',
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: FilledButton.icon(
+                            onPressed: () => _openCategory(quizCategory),
+                            icon: const Icon(Icons.emoji_events_rounded),
+                            label: const Text('Quiz'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF8E61E3),
+                              foregroundColor: Colors.white,
+                              textStyle: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
                             ),
                           ),
-                        ],
-                        const SizedBox(height: 16),
+                        ),
+                        const SizedBox(height: 24),
                       ],
-                    ),
-                  ),
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                      Responsive.pagePadding(constraints.maxWidth).left,
-                      0,
-                      Responsive.pagePadding(constraints.maxWidth).right,
-                      24,
-                    ),
-                    sliver: SliverGrid.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: columns,
-                        mainAxisSpacing: 14,
-                        crossAxisSpacing: 14,
-                        childAspectRatio: 1.05,
-                      ),
-                      itemCount: AppData.categories.length,
-                      itemBuilder: (context, index) {
-                        final category = AppData.categories[index];
-                        return CategoryCard(
-                          category: category,
-                          onTap: () => _openCategory(category),
-                        );
-                      },
                     ),
                   ),
                 ],

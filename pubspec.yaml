@@ -24,3 +24,8 @@ flutter:
   assets:
     - assets/images/
     - assets/audio/
+    - assets/audio/bangla/
+    - assets/audio/english/
+    - assets/audio/arabic/
+    - assets/audio/numbers/
+    - assets/audio/surah/

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/audio_assets.dart';
 import '../models/surah.dart';
 import '../services/audio_service.dart';
 import '../services/progress_service.dart';
@@ -34,6 +35,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final audioAsset = AudioAssets.forSurah(widget.surah);
     return Scaffold(
       body: AppBackground(
         child: SafeArea(
@@ -55,14 +57,49 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           ?.copyWith(fontWeight: FontWeight.w900),
                     ),
                     const SizedBox(height: 14),
-                    FilledButton.icon(
-                      onPressed: () => AudioService.playSurah(
-                        context,
-                        widget.surah.name,
-                        widget.surah.audioAsset,
-                      ),
-                      icon: const Icon(Icons.play_arrow_rounded),
-                      label: const Text('Play Audio'),
+                    ValueListenableBuilder<String?>(
+                      valueListenable: AudioService.instance.currentAsset,
+                      builder: (context, currentAsset, _) {
+                        final isCurrent =
+                            currentAsset == audioAsset &&
+                            AudioService.instance.isPlayingAsset(audioAsset);
+                        return Column(
+                          children: [
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: [
+                                FilledButton.icon(
+                                  onPressed: audioAsset == null
+                                      ? null
+                                      : () => AudioService.instance.playAudio(
+                                          audioAsset,
+                                        ),
+                                  icon: Icon(
+                                    isCurrent
+                                        ? Icons.graphic_eq_rounded
+                                        : Icons.play_arrow_rounded,
+                                  ),
+                                  label: Text(isCurrent ? 'Playing' : 'Play'),
+                                ),
+                                FilledButton.tonalIcon(
+                                  onPressed: () =>
+                                      AudioService.instance.pause(),
+                                  icon: const Icon(Icons.pause_rounded),
+                                  label: const Text('Pause'),
+                                ),
+                                FilledButton.tonalIcon(
+                                  onPressed: () => AudioService.instance.stop(),
+                                  icon: const Icon(Icons.stop_rounded),
+                                  label: const Text('Stop'),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            _AudioProgressBar(audioAsset: audioAsset),
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: 16),
                     ...List.generate(widget.surah.arabicText.length, (index) {
@@ -116,5 +153,62 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         ),
       ),
     );
+  }
+}
+
+class _AudioProgressBar extends StatelessWidget {
+  const _AudioProgressBar({required this.audioAsset});
+
+  final String? audioAsset;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<Duration>(
+      valueListenable: AudioService.instance.position,
+      builder: (context, position, _) {
+        return ValueListenableBuilder<Duration?>(
+          valueListenable: AudioService.instance.duration,
+          builder: (context, duration, _) {
+            final totalMilliseconds =
+                (duration ?? Duration.zero).inMilliseconds;
+            final safeMax = totalMilliseconds <= 0
+                ? 1.0
+                : totalMilliseconds.toDouble();
+            final value = position.inMilliseconds.clamp(0, safeMax).toDouble();
+            final enabled = audioAsset != null && totalMilliseconds > 0;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Slider(
+                  value: value,
+                  max: safeMax,
+                  onChanged: enabled
+                      ? (newValue) {
+                          AudioService.instance.seek(
+                            Duration(milliseconds: newValue.round()),
+                          );
+                        }
+                      : null,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(_formatDuration(position)),
+                    Text(_formatDuration(duration ?? Duration.zero)),
+                  ],
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds.remainder(60);
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 }

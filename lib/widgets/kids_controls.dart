@@ -43,7 +43,7 @@ class KidsRoundNavRow extends StatelessWidget {
     this.leftIcon = Icons.arrow_back_rounded,
     this.homeIcon = Icons.home_rounded,
     this.rightIcon = Icons.arrow_forward_rounded,
-    this.leftColor = const Color(0xFF8C62E5),
+    this.leftColor = const Color(0xFF43B556),
     this.homeColor = const Color(0xFF2E7BF6),
     this.rightColor = const Color(0xFF43B556),
   });

@@ -230,8 +230,16 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
     return const SizedBox.shrink();
   }
 
+  bool get _isBanglaScript =>
+      widget.categoryType == LearningCategoryType.banglaVowels ||
+      widget.categoryType == LearningCategoryType.banglaConsonants;
+
   @override
   Widget build(BuildContext context) {
+    if (_isBanglaScript) {
+      return _buildBanglaScriptPage(context);
+    }
+
     return Scaffold(
       body: AppBackground(
         child: SafeArea(
@@ -409,6 +417,248 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
                 },
               );
             },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBanglaScriptPage(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF6FD47D), Color(0xFFE9F7D8)],
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              left: -40,
+              top: 120,
+              child: _SoftGlow(
+                color: Color(0xFFFFFFFF).withValues(alpha: 0.22),
+                size: 180,
+              ),
+            ),
+            Positioned(
+              right: -20,
+              top: 260,
+              child: _SoftGlow(
+                color: Color(0xFFFFF4B8).withValues(alpha: 0.18),
+                size: 140,
+              ),
+            ),
+            SafeArea(
+              child: CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    pinned: true,
+                    toolbarHeight: 58,
+                    backgroundColor: const Color(0xFF36B85D),
+                    surfaceTintColor: Colors.transparent,
+                    elevation: 0,
+                    centerTitle: true,
+                    leadingWidth: 54,
+                    title: Text(
+                      widget.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    leading: IconButton(
+                      tooltip: 'Back',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      color: Colors.white,
+                    ),
+                    actions: [
+                      if (widget.categoryType ==
+                              LearningCategoryType.banglaVowels ||
+                          widget.categoryType ==
+                              LearningCategoryType.banglaConsonants)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: IconButton(
+                            tooltip: 'Sound',
+                            onPressed: () {
+                              final item = widget.items[_focusedIndex];
+                              final audioAsset = AudioAssets.forLearningItem(
+                                item,
+                              );
+                              if (audioAsset != null) {
+                                unawaited(
+                                  AudioService.instance.playAudio(audioAsset),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.volume_up_rounded),
+                            color: Colors.white,
+                          ),
+                        ),
+                    ],
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        bottom: Radius.circular(24),
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+                    sliver: SliverToBoxAdapter(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(
+                            0xFFF2FAD9,
+                          ).withValues(alpha: 0.92),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.65),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 18,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.fromLTRB(12, 14, 12, 16),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final tileWidth = (constraints.maxWidth - 24) / 3;
+                            return Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: [
+                                for (final item in widget.items)
+                                  SizedBox(
+                                    width: tileWidth,
+                                    child: _BanglaLetterTile(
+                                      item: item,
+                                      color: const Color(0xFF111111),
+                                      onTap: () => _openItem(item),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(0, 6, 0, 20),
+                    sliver: SliverToBoxAdapter(
+                      child: KidsRoundNavRow(
+                        onLeft: () => Navigator.of(context).maybePop(),
+                        onHome: () => Navigator.of(
+                          context,
+                        ).popUntil((route) => route.isFirst),
+                        onRight: widget.items.isEmpty
+                            ? null
+                            : () {
+                                final next =
+                                    (_focusedIndex + 1) % widget.items.length;
+                                setState(() {
+                                  _focusedIndex = next;
+                                });
+                                _openItem(widget.items[next]);
+                              },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SoftGlow extends StatelessWidget {
+  const _SoftGlow({required this.color, required this.size});
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+class _BanglaLetterTile extends StatelessWidget {
+  const _BanglaLetterTile({
+    required this.item,
+    required this.color,
+    required this.onTap,
+  });
+
+  final LearningItem item;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 0,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 92,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                item.title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                item.pronunciation,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF222222),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  height: 1,
+                ),
+              ),
+            ],
           ),
         ),
       ),

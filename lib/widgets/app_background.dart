@@ -15,7 +15,7 @@ class AppBackground extends StatelessWidget {
           end: Alignment.bottomCenter,
           colors: isDark
               ? const [Color(0xFF16213E), Color(0xFF0F3460)]
-              : const [Color(0xFFFFF8EB), Color(0xFFFFFCF8), Color(0xFFFFF0D9)],
+              : const [Color(0xFFFFF9EE), Color(0xFFFFF6E8)],
         ),
       ),
       child: Stack(
@@ -24,7 +24,7 @@ class AppBackground extends StatelessWidget {
             left: -30,
             top: 40,
             child: _GlowDot(
-              color: const Color(0xFFB8E8FF).withValues(alpha: 0.32),
+              color: const Color(0xFFB8E8FF).withValues(alpha: 0.22),
               size: 140,
             ),
           ),
@@ -32,7 +32,7 @@ class AppBackground extends StatelessWidget {
             right: -50,
             top: 120,
             child: _GlowDot(
-              color: const Color(0xFFFFC4DA).withValues(alpha: 0.26),
+              color: const Color(0xFFFFC4DA).withValues(alpha: 0.18),
               size: 160,
             ),
           ),
@@ -40,7 +40,7 @@ class AppBackground extends StatelessWidget {
             left: 28,
             bottom: 90,
             child: _GlowDot(
-              color: const Color(0xFFFFE48A).withValues(alpha: 0.24),
+              color: const Color(0xFFFFE48A).withValues(alpha: 0.16),
               size: 110,
             ),
           ),

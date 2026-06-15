@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/app_data.dart';
+import '../constants/app_colors.dart';
 import '../models/category.dart';
 import '../models/progress_summary.dart';
 import '../services/progress_service.dart';
@@ -194,9 +195,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: columns,
-                                mainAxisSpacing: 12,
-                                crossAxisSpacing: 12,
-                                childAspectRatio: 0.96,
+                                mainAxisSpacing: 14,
+                                crossAxisSpacing: 14,
+                                childAspectRatio: 0.98,
                               ),
                           itemBuilder: (context, index) {
                             final category = gridCategories[index];
@@ -209,20 +210,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 16),
                         SizedBox(
                           width: double.infinity,
-                          height: 56,
+                          height: 58,
                           child: FilledButton.icon(
                             onPressed: () => _openCategory(quizCategory),
                             icon: const Icon(Icons.emoji_events_rounded),
                             label: const Text('Quiz'),
                             style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF8E61E3),
+                              backgroundColor: AppColors.berry,
                               foregroundColor: Colors.white,
                               textStyle: const TextStyle(
-                                fontSize: 20,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w800,
                               ),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(20),
                               ),
                             ),
                           ),

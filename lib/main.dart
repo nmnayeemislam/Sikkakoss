@@ -29,7 +29,7 @@ class _KidsLearningAppState extends State<KidsLearningApp>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addObserver(this); 
     _isDarkMode = ProgressService.isDarkMode();
   }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -14,6 +15,8 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
+  static const _splashImagePath = 'assets/images/splash_kid.png';
+
   late final AnimationController _controller;
   late final Animation<double> _scaleAnimation;
 
@@ -22,10 +25,10 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
-    _scaleAnimation = Tween<double>(begin: 0.92, end: 1.06).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOutBack),
+    _scaleAnimation = Tween<double>(begin: 0.96, end: 1.02).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
     Timer(const Duration(seconds: 3), _goHome);
   }
@@ -50,104 +53,83 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF60C8FF), Color(0xFF7BDEFF), Color(0xFF46C96D)],
-          ),
-        ),
-        child: Stack(
-          children: [
-            const Positioned(left: 18, top: 60, child: _Cloud(size: 58)),
-            const Positioned(right: 26, top: 86, child: _Cloud(size: 46)),
-            const Positioned(left: 80, top: 120, child: _Cloud(size: 28)),
-            const Positioned(right: 80, top: 180, child: _StarBubble()),
-            const Positioned(left: 28, top: 210, child: _StarBubble()),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                height: 150,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xFF78DD72), Color(0xFF49C158)],
-                  ),
-                ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF1738D4),
+                  Color(0xFF5A4CF4),
+                  Color(0xFF8E51FF),
+                ],
               ),
             ),
-            SafeArea(
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ScaleTransition(
-                    scale: _scaleAnimation,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 22,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(34),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.32),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          _RainbowTitle(),
-                          const SizedBox(height: 12),
-                          Text(
-                            'LEARNING APP',
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.2,
-                                ),
+                  const Spacer(),
+                  Expanded(
+                    flex: 7,
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(36),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.08),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.18),
+                                blurRadius: 28,
+                                offset: const Offset(0, 18),
+                              ),
+                            ],
                           ),
-                        ],
+                          child: Image.asset(
+                            _splashImagePath,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const _FallbackSplashArt();
+                            },
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      _KidFace(color: Color(0xFFFFC83D), smile: true),
-                      SizedBox(width: 20),
-                      _KidFace(color: Color(0xFFFF7A7A), smile: false),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-                  Container(
-                    width: 160,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3C4),
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 20,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Text('📖', style: TextStyle(fontSize: 96)),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Kids Learning',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.4,
                     ),
                   ),
-                  const SizedBox(height: 26),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Play, learn, and grow every day',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.88),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
                   Container(
-                    width: 180,
-                    height: 16,
+                    width: 190,
+                    height: 14,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: Colors.white.withOpacity(0.22),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: const FractionallySizedBox(
@@ -155,139 +137,182 @@ class _SplashScreenState extends State<SplashScreen>
                       widthFactor: 0.72,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          color: Color(0xFF34C759),
+                          gradient: LinearGradient(
+                            colors: [Color(0xFFFFD84D), Color(0xFFFF8A34)],
+                          ),
                           borderRadius: BorderRadius.all(Radius.circular(999)),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Text(
                     'Loading...',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.92),
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _RainbowTitle extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    const colors = [
-      Color(0xFFFF6B6B),
-      Color(0xFFFFC83D),
-      Color(0xFF55C04E),
-      Color(0xFF2E7BF6),
-    ];
-    const letters = ['K', 'I', 'D', 'S'];
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(letters.length, (index) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2),
-          child: Text(
-            letters[index],
-            style: TextStyle(
-              fontSize: 44,
-              fontWeight: FontWeight.w900,
-              color: colors[index],
-              shadows: [
-                Shadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-          ),
-        );
-      }),
-    );
-  }
-}
-
-class _Cloud extends StatelessWidget {
-  const _Cloud({required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Icon(
-      Icons.cloud_rounded,
-      color: Colors.white.withValues(alpha: 0.84),
-      size: size,
-    );
-  }
-}
-
-class _StarBubble extends StatelessWidget {
-  const _StarBubble();
+class _FallbackSplashArt extends StatelessWidget {
+  const _FallbackSplashArt();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.24),
-        shape: BoxShape.circle,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2448E4), Color(0xFF9752FF)],
+        ),
       ),
-      child: const Icon(Icons.star_rounded, size: 14, color: Colors.white),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            top: 24,
+            left: 24,
+            child: Icon(
+              Icons.cloud_rounded,
+              size: 90,
+              color: Colors.white.withOpacity(0.92),
+            ),
+          ),
+          Positioned(
+            top: 30,
+            right: 26,
+            child: Icon(
+              Icons.star_rounded,
+              size: 56,
+              color: const Color(0xFFFFD84D).withOpacity(0.96),
+            ),
+          ),
+          Positioned(
+            top: 120,
+            right: 90,
+            child: Icon(
+              Icons.star_rounded,
+              size: 42,
+              color: const Color(0xFFFFD84D).withOpacity(0.96),
+            ),
+          ),
+          Positioned(
+            bottom: 26,
+            left: 22,
+            child: _BlockStack(
+              labels: const ['A', 'B', 'C'],
+              colors: const [
+                Color(0xFFFF8A25),
+                Color(0xFFFFD62D),
+                Color(0xFF3898FF),
+              ],
+            ),
+          ),
+          Positioned(
+            right: 22,
+            bottom: 28,
+            child: _BlockStack(
+              labels: const ['1', '2', '3'],
+              colors: const [
+                Color(0xFFFFB02E),
+                Color(0xFF61C84D),
+                Color(0xFF3898FF),
+              ],
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 172,
+                  height: 172,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFD39B),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.14),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Text('📘', style: TextStyle(fontSize: 84)),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'Add image at\nassets/images/splash_kid.png',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.96),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _KidFace extends StatelessWidget {
-  const _KidFace({required this.color, required this.smile});
+class _BlockStack extends StatelessWidget {
+  const _BlockStack({required this.labels, required this.colors});
 
-  final Color color;
-  final bool smile;
+  final List<String> labels;
+  final List<Color> colors;
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: [
-        Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.95),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.10),
-                blurRadius: 10,
-                offset: const Offset(0, 6),
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(labels.length, (index) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: index == labels.length - 1 ? 0 : 8),
+          child: Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: colors[index],
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                labels[index],
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 34,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              smile ? '😊' : '😄',
-              style: const TextStyle(fontSize: 34),
             ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: 40,
-          height: 10,
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-      ],
+        );
+      }),
     );
   }
 }

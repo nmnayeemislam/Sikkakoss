@@ -126,7 +126,7 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
               borderRadius: BorderRadius.circular(22),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
+                  color: Colors.black.withOpacity(0.08),
                   blurRadius: 18,
                   offset: const Offset(0, 10),
                 ),
@@ -134,7 +134,7 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
               border: Border.all(
                 color: isPlaying
                     ? _appBarColor()
-                    : Colors.black.withValues(alpha: 0.05),
+                    : Colors.black.withOpacity(0.05),
                 width: isPlaying ? 2 : 1,
               ),
             ),
@@ -176,58 +176,314 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
     );
   }
 
-  Widget _buildAlphabetChips(BuildContext context) {
-    final previewItems = widget.items.take(5).toList(growable: false);
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      alignment: WrapAlignment.center,
-      children: [
-        for (final item in previewItems)
-          InkWell(
-            onTap: () {
-              setState(() {
-                _focusedIndex = widget.items.indexOf(item);
-              });
-              _openItem(item);
-            },
-            borderRadius: BorderRadius.circular(999),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(999),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 10,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Text(
-                item.title,
-                style: TextStyle(
-                  color: _appBarColor(),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
   Widget _buildTopLesson(BuildContext context) {
     final item = widget.items[_focusedIndex];
     if (widget.categoryType == LearningCategoryType.english) {
-      return _buildShowcase(context, widget.title, item);
+      return _buildEnglishLessonCard(context, item);
     }
     if (widget.categoryType == LearningCategoryType.numbers) {
-      return _buildShowcase(context, widget.title, item);
+      return _buildNumberLessonCard(context, item);
     }
     return const SizedBox.shrink();
+  }
+
+  Future<void> _playFocusedAudio() async {
+    if (widget.items.isEmpty) {
+      return;
+    }
+    final item = widget.items[_focusedIndex];
+    final audioAsset = AudioAssets.forLearningItem(item);
+    if (audioAsset != null) {
+      await AudioService.instance.playAudio(audioAsset);
+    }
+  }
+
+  void _goToPreviousItem() {
+    if (widget.items.isEmpty) {
+      return;
+    }
+    final previous = (_focusedIndex - 1 + widget.items.length) % widget.items.length;
+    setState(() {
+      _focusedIndex = previous;
+    });
+  }
+
+  void _goToNextItem() {
+    if (widget.items.isEmpty) {
+      return;
+    }
+    final next = (_focusedIndex + 1) % widget.items.length;
+    setState(() {
+      _focusedIndex = next;
+    });
+  }
+
+  Widget _buildEnglishLessonCard(BuildContext context, LearningItem item) {
+    final audioAsset = AudioAssets.forLearningItem(item);
+    return ValueListenableBuilder<String?>(
+      valueListenable: AudioService.instance.currentAsset,
+      builder: (context, currentAudioAsset, _) {
+        final isPlaying =
+            currentAudioAsset == audioAsset &&
+            AudioService.instance.isPlayingAsset(audioAsset);
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEAF6FF),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF5DADEC).withOpacity(0.18),
+                blurRadius: 22,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: isPlaying
+                        ? const Color(0xFF4E8DF7)
+                        : Colors.white,
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 2),
+                    _EnglishLetterArt(letter: item.title),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: '${item.title} ',
+                                  style: const TextStyle(
+                                    color: Color(0xFFE53958),
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const TextSpan(
+                                  text: 'for ',
+                                  style: TextStyle(
+                                    color: Color(0xFF24304F),
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: item.subtitle.replaceFirst(
+                                    RegExp('^${RegExp.escape(item.title)}\\s*for\\s*', caseSensitive: false),
+                                    '',
+                                  ),
+                                  style: const TextStyle(
+                                    color: Color(0xFFE53958),
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          item.imageEmoji ?? '📘',
+                          style: const TextStyle(fontSize: 52, height: 1),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _CircleLessonButton(
+                    icon: Icons.arrow_back_rounded,
+                    color: const Color(0xFFFFB228),
+                    onTap: _goToPreviousItem,
+                  ),
+                  _CircleLessonButton(
+                    icon: isPlaying
+                        ? Icons.graphic_eq_rounded
+                        : Icons.volume_up_rounded,
+                    color: const Color(0xFF3C8DF6),
+                    onTap: _playFocusedAudio,
+                  ),
+                  _CircleLessonButton(
+                    icon: Icons.arrow_forward_rounded,
+                    color: const Color(0xFF67C53B),
+                    onTap: _goToNextItem,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _PageDots(
+                count: widget.items.length,
+                activeIndex: _focusedIndex,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildNumberLessonCard(BuildContext context, LearningItem item) {
+    final audioAsset = AudioAssets.forLearningItem(item);
+    return ValueListenableBuilder<String?>(
+      valueListenable: AudioService.instance.currentAsset,
+      builder: (context, currentAudioAsset, _) {
+        final isPlaying =
+            currentAudioAsset == audioAsset &&
+            AudioService.instance.isPlayingAsset(audioAsset);
+        final count = int.tryParse(item.title) ?? 0;
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEAF6FF),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF5DADEC).withOpacity(0.18),
+                blurRadius: 22,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: isPlaying
+                        ? const Color(0xFF4E8DF7)
+                        : Colors.white,
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      item.title,
+                      style: const TextStyle(
+                        color: Color(0xFF2F7AF6),
+                        fontSize: 118,
+                        fontWeight: FontWeight.w900,
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        SizedBox(
+                          width: 42,
+                          child: Text(
+                            item.title,
+                            style: const TextStyle(
+                              color: Color(0xFF24304F),
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            item.subtitle,
+                            style: const TextStyle(
+                              color: Color(0xFF2F52A3),
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _numberEmojiRow(count),
+                          style: const TextStyle(fontSize: 28, height: 1),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _CircleLessonButton(
+                    icon: Icons.arrow_back_rounded,
+                    color: const Color(0xFFFFB228),
+                    onTap: _goToPreviousItem,
+                  ),
+                  _CircleLessonButton(
+                    icon: isPlaying
+                        ? Icons.graphic_eq_rounded
+                        : Icons.volume_up_rounded,
+                    color: const Color(0xFF3C8DF6),
+                    onTap: _playFocusedAudio,
+                  ),
+                  _CircleLessonButton(
+                    icon: Icons.arrow_forward_rounded,
+                    color: const Color(0xFF67C53B),
+                    onTap: _goToNextItem,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _PageDots(
+                count: widget.items.length,
+                activeIndex: _focusedIndex,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _numberEmojiRow(int count) {
+    if (count <= 0) {
+      return '🔵';
+    }
+    final visible = count.clamp(1, 4);
+    return List.filled(visible, '🍊').join(' ');
   }
 
   bool get _isBanglaScript =>
@@ -238,6 +494,12 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
   Widget build(BuildContext context) {
     if (_isBanglaScript) {
       return _buildBanglaScriptPage(context);
+    }
+    if (widget.categoryType == LearningCategoryType.english) {
+      return _buildEnglishFullscreenPage(context);
+    }
+    if (widget.categoryType == LearningCategoryType.numbers) {
+      return _buildNumberFullscreenPage(context);
     }
 
     return Scaffold(
@@ -301,12 +563,7 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
                           ),
                         ),
                       if (widget.categoryType == LearningCategoryType.english)
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
-                          sliver: SliverToBoxAdapter(
-                            child: _buildAlphabetChips(context),
-                          ),
-                        ),
+                        const SliverToBoxAdapter(child: SizedBox.shrink()),
                       if (widget.categoryType == LearningCategoryType.numbers)
                         SliverPadding(
                           padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
@@ -392,26 +649,7 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
                           ),
                         ),
                       if (widget.categoryType == LearningCategoryType.english)
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(0, 0, 0, 24),
-                          sliver: SliverToBoxAdapter(
-                            child: KidsRoundNavRow(
-                              showHome: false,
-                              onLeft: () => Navigator.of(context).maybePop(),
-                              onRight: widget.items.isEmpty
-                                  ? null
-                                  : () {
-                                      final next =
-                                          (_focusedIndex + 1) %
-                                          widget.items.length;
-                                      setState(() {
-                                        _focusedIndex = next;
-                                      });
-                                      _openItem(widget.items[next]);
-                                    },
-                            ),
-                          ),
-                        ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 20)),
                     ],
                   );
                 },
@@ -423,6 +661,111 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
     );
   }
 
+  Widget _buildEnglishFullscreenPage(BuildContext context) {
+    return Scaffold(
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                height: 78,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: _appBarColor(),
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(24),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Back',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        widget.title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 48),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                  child: _buildTopLesson(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNumberFullscreenPage(BuildContext context) {
+    return Scaffold(
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                height: 78,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: _appBarColor(),
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(24),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Back',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        widget.title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 48),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                  child: _buildTopLesson(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
   Widget _buildBanglaScriptPage(BuildContext context) {
     return Scaffold(
       body: Container(
@@ -439,7 +782,7 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
               left: -40,
               top: 120,
               child: _SoftGlow(
-                color: Color(0xFFFFFFFF).withValues(alpha: 0.22),
+                color: const Color(0xFFFFFFFF).withOpacity(0.22),
                 size: 180,
               ),
             ),
@@ -447,7 +790,7 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
               right: -20,
               top: 260,
               child: _SoftGlow(
-                color: Color(0xFFFFF4B8).withValues(alpha: 0.18),
+                color: const Color(0xFFFFF4B8).withOpacity(0.18),
                 size: 140,
               ),
             ),
@@ -514,14 +857,14 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
                         decoration: BoxDecoration(
                           color: const Color(
                             0xFFF2FAD9,
-                          ).withValues(alpha: 0.92),
+                          ).withOpacity(0.92),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.65),
+                            color: Colors.white.withOpacity(0.65),
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
+                              color: Colors.black.withOpacity(0.08),
                               blurRadius: 18,
                               offset: const Offset(0, 10),
                             ),
@@ -582,6 +925,128 @@ class _LearningGridScreenState extends State<LearningGridScreen> {
   }
 }
 
+class _EnglishLetterArt extends StatelessWidget {
+  const _EnglishLetterArt({required this.letter});
+
+  final String letter;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Text(
+          letter,
+          style: TextStyle(
+            fontSize: 170,
+            fontWeight: FontWeight.w900,
+            foreground: Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 12
+              ..color = const Color(0xFFD62857),
+          ),
+        ),
+        Text(
+          letter,
+          style: const TextStyle(
+            fontSize: 170,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFFFF4B76),
+            height: 1,
+          ),
+        ),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(painter: _LetterDashPainter()),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LetterDashPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.85)
+      ..strokeWidth = 2.4
+      ..style = PaintingStyle.stroke;
+
+    final centerX = size.width / 2;
+    for (double y = 18; y < size.height - 18; y += 14) {
+      canvas.drawLine(Offset(centerX - 18, y), Offset(centerX + 18, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _CircleLessonButton extends StatelessWidget {
+  const _CircleLessonButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color,
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(icon, color: Colors.white, size: 24),
+        ),
+      ),
+    );
+  }
+}
+
+class _PageDots extends StatelessWidget {
+  const _PageDots({required this.count, required this.activeIndex});
+
+  final int count;
+  final int activeIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleCount = count > 5 ? 5 : count;
+    final start = count <= 5
+        ? 0
+        : (activeIndex - 2).clamp(0, count - visibleCount);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(visibleCount, (index) {
+        final itemIndex = start + index;
+        final isActive = itemIndex == activeIndex;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: isActive ? 14 : 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: isActive
+                ? const Color(0xFF3186F6)
+                : const Color(0xFFBFD6EC),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
+      }),
+    );
+  }
+}
+
 class _SoftGlow extends StatelessWidget {
   const _SoftGlow({required this.color, required this.size});
 
@@ -626,7 +1091,7 @@ class _BanglaLetterTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
+                color: Colors.black.withOpacity(0.08),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),
@@ -742,7 +1207,7 @@ class _NumberRangeGrid extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
+                    color: Colors.black.withOpacity(0.06),
                     blurRadius: 10,
                     offset: const Offset(0, 6),
                   ),
@@ -762,3 +1227,5 @@ class _NumberRangeGrid extends StatelessWidget {
     );
   }
 }
+
+

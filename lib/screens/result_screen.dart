@@ -26,6 +26,10 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   int _calculateStars() {
+    if (widget.total <= 0) {
+      return 0;
+    }
+
     final ratio = widget.score / widget.total;
     if (ratio >= 0.85) {
       return 3;

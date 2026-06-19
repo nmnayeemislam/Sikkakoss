@@ -45,7 +45,7 @@ class ProgressHeader extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${summary.completedLessons.length} lessons completed · Best quiz ${summary.bestQuizScore}',
+                    '${summary.completedLessons.length} lessons completed - Best quiz ${summary.bestQuizScore}',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),

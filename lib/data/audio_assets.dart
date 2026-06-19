@@ -117,6 +117,10 @@ class AudioAssets {
   };
 
   static String? forLearningItem(LearningItem item) {
+    if (item.audioAsset != null && item.audioAsset!.isNotEmpty) {
+      return item.audioAsset;
+    }
+
     if (item.id.startsWith('en_')) {
       return 'audio/english/${item.title.toLowerCase()}.mp3';
     }
@@ -138,10 +142,6 @@ class AudioAssets {
       if (number != null) {
         return numberAsset(number);
       }
-    }
-
-    if (item.audioAsset != null && item.audioAsset!.isNotEmpty) {
-      return item.audioAsset;
     }
 
     return null;
